@@ -274,35 +274,33 @@ export default function Component() {
 
 
   const importProjectsFromTextFile = (file) => {
-    if (typeof window !== "undefined") {
-      // Create a new instance of FileReader to read the file contents
-      const reader = new FileReader();
-      // Define what happens when FileReader finishes loading the file
-      reader.onload = (e) => {
-        // Extract the file content from the FileReader result
-        const fileContent = e.target.result;
-        // Parse the file content into projects using custom parsing function
-        const importedProjects = parseProjectsText(fileContent);
-        // Update state with the imported projects
-        setProjects(importedProjects);
-        // Close modal or perform other actions after importing
-        setShowModal(false);
-      };
-      // Start reading the file as plain text
-      reader.readAsText(file);
-    }
+    // Create a new instance of FileReader to read the file contents
+    const reader = new FileReader();
+    // Define what happens when FileReader finishes loading the file
+    reader.onload = (e) => {
+      // Extract the file content from the FileReader result
+      const fileContent = e.target.result;
+      // Parse the file content into projects using custom parsing function
+      const importedProjects = parseProjectsText(fileContent);
+      // Update state with the imported projects
+      setProjects(importedProjects);
+      // Close modal or perform other actions after importing
+      setShowModal(false);
+    };
+    // Start reading the file as plain text
+    reader.readAsText(file);
   };
-
-
   const parseProjectsText = (text) => {
-    // parsing logic based on text file format
-    const lines = text.split("\n");
+    const lines = text.trim().split("\n");
     const parsedProjects = [];
     let currentProject = null;
 
     lines.forEach(line => {
+      line = line.trim();
+      if (!line) return; // Skip empty lines
+
       if (line.startsWith("Project:")) {
-        // Start parsing a new project
+        // Push the previous project if any
         if (currentProject) {
           parsedProjects.push(currentProject);
         }
@@ -314,21 +312,29 @@ export default function Component() {
           tasks: []
         };
       } else if (line.startsWith("Description:")) {
-        // Parse project description
-        currentProject.description = line.substring(13).trim();
+        if (currentProject) {
+          currentProject.description = line.substring(13).trim();
+        }
       } else if (line.startsWith("Due Date:")) {
-        // Parse project due date
-        currentProject.dueDate = line.substring(9).trim();
+        if (currentProject) {
+          currentProject.dueDate = line.substring(9).trim();
+        }
       } else if (line.startsWith("Status:")) {
-        // Parse project status
-        currentProject.status = line.substring(7).trim();
+        if (currentProject) {
+          currentProject.status = line.substring(7).trim();
+        }
       } else if (line.startsWith("- ")) {
-        // Parse tasks for the current project
-        currentProject.tasks.push({ id: currentProject.tasks.length + 1, name: line.substring(2).trim(), completed: false });
+        if (currentProject) {
+          currentProject.tasks.push({
+            id: currentProject.tasks.length + 1,
+            name: line.substring(2).trim(),
+            completed: false
+          });
+        }
       }
     });
 
-    // Push the last parsed project into the array if exists
+    // Push the last parsed project into the array if it exists
     if (currentProject) {
       parsedProjects.push(currentProject);
     }
@@ -336,9 +342,10 @@ export default function Component() {
     // Assign unique IDs to parsed projects
     return parsedProjects.map((project, index) => ({
       ...project,
-      id: index + 1 // Example: Assigning unique IDs based on index
+      id: index + 1
     }));
   };
+
 
   const handleImportButtonClick = () => {
     // Create an <input> element of type file
